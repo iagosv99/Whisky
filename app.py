@@ -112,7 +112,6 @@ def main():
 			b_title = i[1]
 			b_article = i[2]
 			b_post_date = i[3]
-			st.text("Reading Time:{}".format(readingTime(b_article)))
 			st.markdown(head_message_temp.format(b_title,b_author,b_post_date),unsafe_allow_html=True)
 			st.markdown(full_message_temp.format(b_article),unsafe_allow_html=True)
 
@@ -150,7 +149,6 @@ def main():
 				b_title = i[1]
 				b_article = i[2]
 				b_post_date = i[3]
-				st.text("Reading Time:{}".format(readingTime(b_article)))
 				st.markdown(head_message_temp.format(b_title,b_author,b_post_date),unsafe_allow_html=True)
 				st.markdown(full_message_temp.format(b_article),unsafe_allow_html=True)
 
