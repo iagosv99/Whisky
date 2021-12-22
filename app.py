@@ -154,19 +154,22 @@ def main():
     choice = st.sidebar.selectbox("Menu",menu)
 
 
-
     if choice == "Home":
         st.subheader("Lista de todos los whiskys")
+        st.caption("Sitúa el cursor encima de un campo en modo pantalla reducida para visualizar todo su contenido")
         try:
             df = pd.read_csv(url)
+            df = df.drop(['currency', 'Unnamed: 0'], axis=1)
+            df[['review.point']].astype(int)
+            df['price'] = pd.to_numeric(df['price'])
+            
         except Exception as e:
             print(e)
             df = pd.read_excel(url)
         st.write(df)
 
         st.subheader("Buscar whisky")
-        search_choice = st.radio("Field to Search By",("nombre","categoria","precio"))
-
+        search_choice = st.radio("Campo por el que buscar",("nombre","categoria","precio","puntuación"))
 
         if search_choice == "nombre":
             nombres = df['name'].unique()
@@ -182,8 +185,15 @@ def main():
             precios = df['price'].unique()
             precio = st.selectbox('Precio', precios)
             df[df['price'] == precio]
-                         
-            
+
+        elif search_choice == "puntuación":
+            st.caption("En caso de que no exista un valor se visualizará la palabra clave empty dentro del dataset")
+            min_puntuacion = int(df['review.point'].min())
+            max_puntuacion = int(df['review.point'].max())
+            puntuacion = st.slider('Puntuación', min_puntuacion, max_puntuacion)
+            df[df['review.point'] == puntuacion]
+
+        
         st.subheader("Ver 15 ultimos")
         entrada = 15
         print("\n")
@@ -191,18 +201,38 @@ def main():
         st.write(df_copy.tail(i))
         
         
+
     elif choice == "View Posts":
-        st.subheader("View Articles")
-        all_titles = [i[0] for i in view_all_titles()]
-        postlist = st.sidebar.selectbox("View Posts",all_titles)
-        post_result = get_blog_by_title(postlist)
-        for i in post_result:
-            b_author = i[0]
-            b_title = i[1]
-            b_article = i[2]
-            b_post_date = i[3]
-            st.markdown(head_message_temp.format(b_title,b_author,b_post_date),unsafe_allow_html=True)
-            st.markdown(full_message_temp.format(b_article),unsafe_allow_html=True)
+        
+        df = pd.read_csv(url)
+        df = df.drop(['currency', 'Unnamed: 0'], axis=1)
+        df[['review.point']].astype(int)
+        df['price'] = pd.to_numeric(df['price'])
+            
+        st.subheader("Recomendaciones")
+        search_choice = st.radio("Campo por el que buscar",("nombre","categoria","precio","puntuación"))
+
+        if search_choice == "nombre":
+            nombres = df['name'].unique()
+            nombre = st.selectbox('Nombre', nombres)
+           
+
+        elif search_choice == "categoria":
+            categorias = df['category'].unique()
+            categoria = st.selectbox('Nombre', categorias)
+         
+
+        elif search_choice == "precio":
+            precios = df['price'].unique()
+            precio = st.selectbox('Precio', precios)
+         
+
+        elif search_choice == "puntuación":
+            min_precio = int(df['review.point'].min())
+            max_precio = int(df['review.point'].max())
+
+            precio = st.slider('Puntuación', min_precio, max_precio)
+          
 
 
 
