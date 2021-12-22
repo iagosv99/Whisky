@@ -165,24 +165,24 @@ def main():
         st.write(df)
 
         st.subheader("Buscar whisky")
-        search_term = st.text_input('Pulsar Enter para que se guarde la elección')
         search_choice = st.radio("Field to Search By",("nombre","categoria","precio"))
-        if st.button("Buscar"):
 
-            if search_choice == "nombre":
-                    i = df_copy.loc[:, 'name'] == search_term
-                    df_nombre = df_copy.loc[i]
-                    st.write(df_nombre)
 
-            elif search_choice == "categoria":
-                    i = df_copy.loc[:, 'category'] == search_term
-                    df_categoria = df_copy.loc[i]
-                    st.write(df_categoria)
+        if search_choice == "nombre":
+            nombres = df['name'].unique()
+            nombre = st.selectbox('Nombre', nombres)
+            df[df['name'] == nombre]
 
-            elif search_choice == "precio":
-                    i = df_copy.loc[:, 'price'] == search_term
-                    df_precio = df_copy.loc[i]
-                    st.write(df_precio)
+        elif search_choice == "categoria":
+            categorias = df['category'].unique()
+            categoria = st.selectbox('Nombre', categorias)
+            df[df['category'] == categoria]
+
+        elif search_choice == "precio":
+            precios = df['price'].unique()
+            precio = st.selectbox('Precio', precios)
+            df[df['price'] == precio]
+                         
             
         st.subheader("Ver 15 ultimos")
         entrada = 15
@@ -191,7 +191,6 @@ def main():
         st.write(df_copy.tail(i))
         
         
-
     elif choice == "View Posts":
         st.subheader("View Articles")
         all_titles = [i[0] for i in view_all_titles()]
