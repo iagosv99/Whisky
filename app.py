@@ -2,7 +2,69 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
+
 matplotlib.use('Agg')
+
+
+####################################CSV
+#Cargamos los datos del fichero csv de github 
+url = 'https://raw.githubusercontent.com/AnHell999/Whisky/main/scotch_review.csv'
+df = pd.read_csv(url)
+df = df.drop(['currency', 'Unnamed: 0'], axis=1)
+df[['review.point']].astype(int)
+df['price'] = pd.to_numeric(df['price'])
+df_copy  = df.copy(True)  
+
+#Importamos librerias para el procesado del texto
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import  stopwords
+from nltk.stem import PorterStemmer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import pairwise_distances
+
+nltk.download('punkt')
+nltk.download('stopwords')
+
+#Procesamos el texto
+def procesarDf(df_proc):
+  ps = PorterStemmer()
+  procesedTxt = []
+
+  for row in df_proc.itertuples(index=False):
+
+    text = word_tokenize(row[4])
+    stops = set(stopwords.words("english"))
+    text = [ps.stem(w) for w in text if not w in stops and w.isalnum()]
+    text = " ".join(text)
+
+    procesedTxt.append(text)
+
+  df_proc['procesed_desc'] = pd.Series(procesedTxt)
+  return df_proc
+print()
+
+#Creación de la bolsa de palabras
+def getMatrix(df_proc):  
+  BoWModel = TfidfVectorizer()
+  BoWModel.fit(df_proc['procesed_desc'])
+  TextsBow = BoWModel.transform(df_proc['procesed_desc'])
+
+  return pairwise_distances(TextsBow,TextsBow,metric='cosine')
+
+print()
+
+#Visualizar las últimas filas del dataset 
+def visualizarTablas():
+	entrada = 12#input("Numero de whiskys a listar por el final: ")
+	print("\n")
+	try:
+		i = int(entrada)
+	except:
+		print(entrada +", no es un numero, se listaran los 5 ultimos whisky por defecto")
+		i = 5
+
+	df_copy.tail(i)
 
 # DB
 import sqlite3
@@ -93,14 +155,7 @@ def main():
 
 	if choice == "Home":
 		st.subheader("Home")
-		result = view_all_notes()
-		
-		for i in result:
-			b_author = i[0]
-			b_title = i[1]
-			b_article = str(i[2])[0:30]
-			b_post_date = i[3]
-			st.markdown(title_temp.format(b_title,b_author,b_article,b_post_date),unsafe_allow_html=True)
+		visualizarTablas()
 
 	elif choice == "View Posts":
 		st.subheader("View Articles")
