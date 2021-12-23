@@ -1,8 +1,16 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg')
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import  stopwords
+from nltk.stem import PorterStemmer
+
+import sklearn
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import pairwise_distances
+
+nltk.download('punkt')
+nltk.download('stopwords')
 
 global df
 
@@ -13,15 +21,7 @@ df = df.drop(['currency', 'Unnamed: 0'], axis=1)
 df[['review.point']].astype(int)
 df['price'] = pd.to_numeric(df['price'])
 df_copy  = df.copy(True) 
-################################
-import nltk
 
-from nltk.tokenize import word_tokenize
-from nltk.corpus import  stopwords
-from nltk.stem import PorterStemmer
-
-nltk.download('punkt')
-nltk.download('stopwords')
 ################################################################
 def procesarDf(df_proc):
   ps = PorterStemmer()
@@ -38,7 +38,7 @@ def procesarDf(df_proc):
 
   df_proc['procesed_desc'] = pd.Series(procesedTxt)
   return df_proc
-print()
+
 ################################
 def getMatrix(df_proc):  
   BoWModel = TfidfVectorizer()
@@ -46,10 +46,7 @@ def getMatrix(df_proc):
   TextsBow = BoWModel.transform(df_proc['procesed_desc'])
 
   return pairwise_distances(TextsBow,TextsBow,metric='cosine')
-
-print()
-################################
-#           
+################################       
 
 # DB
 import sqlite3
@@ -91,23 +88,30 @@ def get_precio_Whisky(precio,d):
 
 def filtradoNumerico(numericCol, min, max, ascent, d):
 
-  df_precio = d.loc[(d.loc[:,numericCol] >= min) & (d.loc[:, 'price'] <= max)]
+  df_precio = d.loc[(d.loc[:,numericCol] >= min) & (d.loc[:, numericCol] <= max)]
   df_precio = df_precio.sort_values(numericCol, ascending=ascent)
   return df_precio
     
+def getIndex(value,d):
+  print(value)
+  i = d.loc[:, 'name'] == value
+  df_tmp = d.loc[i]
+  i2 = df_tmp.index.tolist()
+  return i2[0]
 
-def get_blog_by_title(title):
-    c.execute('SELECT * FROM blogtable WHERE title="{}"'.format(title))
-    data = c.fetchall()
-    return data
-def get_blog_by_author(author):
-    c.execute('SELECT * FROM blogtable WHERE author="{}"'.format(author))
-    data = c.fetchall()
-    return data
+def filtradoTextual(value,d):  
+  i = d.loc[:, 'category'] == value
+  df_single_malt = d.loc[i]
+  return df_single_malt
 
-def delete_data(title):
-    c.execute('DELETE FROM blogtable WHERE title="{}"'.format(title))
-    conn.commit()
+def rango(index):
+  precio_base = df_copy.price[index]
+  min = precio_base/2
+  max = precio_base*2
+  d = filtradoNumerico('price',min,max,True,df_copy)
+  d = filtradoTextual(df_copy.iloc[index].category, d)
+  d = d.reset_index(drop=True)
+  return d
 
 
 # Layout Templates
@@ -156,68 +160,67 @@ def main():
     
     st.markdown(html_temp.format('royalblue','white'),unsafe_allow_html=True)
 
-    menu = ["Home","Encuentra tu whisky"]
+    menu = ["Home","Encuentra tu whisky","Recomendador de whisky"]
     choice = st.sidebar.selectbox("Menu",menu)
 
 
 
     if choice == "Home":
+        st.write("")
         st.subheader("Lista de todos los whiskys")
+        st.write("")
         st.write(df)
+        st.write("")
+        st.write("")
+        st.video("https://www.youtube.com/watch?v=iyWG_uQjGW8&ab_channel=FREEMOVIES")
 
-        st.subheader("Buscar whisky")
-        search_choice = st.radio("Field to Search By",("nombre","categoria","precio","rating"))
-
-
-        if search_choice == "nombre":
-            nombres = df['name'].unique()
-            nombre = st.selectbox('Nombre', nombres)
-            df[df['name'] == nombre]
-
-        elif search_choice == "categoria":
-            categorias = df['category'].unique()
-            categoria = st.selectbox('Nombre', categorias)
-            df[df['category'] == categoria]
-
-        elif search_choice == "precio":
-            precios = df['price'].unique()
-            precio_min = st.selectbox('Precio minimo', precios)
-            precio_max = st.selectbox('Precio maximo', precios)
-            if precio_min > precio_max:
-                precio_min = 12.0
-                precio_max = 50.0
-            df_precio = filtradoNumerico('price',precio_min,precio_max,True,df_copy)
-            df_precio
-
-        elif search_choice == "rating":
-            rg_rev = st.slider('Rating',0,100,(80,99))                 
-            st.write('Values', rg_rev)
-            df_rating = filtradoNumerico('review.point',rg_rev[0],rg_rev[1],True,df_copy)
-            df_rating
-    
         
     elif choice == "Encuentra tu whisky":
         st.subheader("Encuentra tu whisky ideal")
+        df_muestra = df
 
         st.write("Categoria")
         categorias = df['category'].unique()
         categoria = st.selectbox('Nombre', categorias)
+        df_muestra = df[df['category'] == categoria]
 
         st.write("Precio")
-        precios = df['price'].unique()
+        precios = df_muestra['price'].unique()
         precio_min = st.selectbox('Precio minimo', precios)
         precio_max = st.selectbox('Precio maximo', precios)
         if precio_min > precio_max:
-            precio_min = 12.0
-            precio_max = 1000000.0
-        
-        rg_rev = st.slider('Rating',0,100,(80,99))                 
+            precio_min = precios.min()
+            precio_max = precios.max()
+        df_muestra = filtradoNumerico('price',precio_min,precio_max,True,df_muestra)
 
-        df_muestra = df    
-        df_muestra = df[df['category'] == categoria]
-        df_muestra = filtradoNumerico('price',precio_min,precio_max,True,df_muestra)   
+        ratings = df_muestra['review.point'].unique()
+        rg_rev = st.slider('Rating',int(ratings.min()),int(ratings.max()),(80,85))                 
         df_muestra = filtradoNumerico('review.point',rg_rev[0],rg_rev[1],True,df_muestra)
-        df_muestra
+        
+        df_muestra            
+
+    elif choice == "Recomendador de whisky":
+        nombres = df['name'].unique()
+        nombre = st.selectbox('Nombre', nombres)
+        df[df['name'] == nombre]
+
+        index = getIndex(nombre,df)
+    
+        df_to_recomend = procesarDf(df_copy)
+        df_to_recomend = rango(index)
+
+        index2 = getIndex(df_copy.name.iloc[index], df_to_recomend)
+
+        matrixDescription = getMatrix(df_to_recomend)
+
+        distance = list(enumerate(matrixDescription[index2]))
+        ordenados_por_resena = sorted(distance, key=lambda x: x[1])
+        top_index = ordenados_por_resena[1:10]
+        top = [i[0] for i in top_index]
+
+        df_to_recomend.iloc[top]
+
+
 
 if __name__ == '__main__':
     main()
