@@ -88,6 +88,12 @@ def get_precio_Whisky(precio,d):
     i = d.loc[:, 'price'] == precio
     df_precio = d.loc[i]
     return df_precio
+
+def filtradoNumerico(numericCol, min, max, ascent, d):
+
+  df_precio = d.loc[(d.loc[:,numericCol] >= min) & (d.loc[:, 'price'] <= max)]
+  df_precio = df_precio.sort_values(numericCol, ascending=ascent)
+  return df_precio
     
 
 def get_blog_by_title(title):
@@ -106,8 +112,8 @@ def delete_data(title):
 
 # Layout Templates
 html_temp = """
-<div style="background-color:{};padding:10px;border-radius:10px">
-<h1 style="color:{};text-align:center;">WISHKY </h1>
+<div style="background-color:#955624;padding:10px;border-radius:10px">
+<h1 style="color:white;text-align:center;">WISHKY</h1>
 </div>
 """
 title_temp ="""
@@ -150,26 +156,18 @@ def main():
     
     st.markdown(html_temp.format('royalblue','white'),unsafe_allow_html=True)
 
-    menu = ["Home","View Posts","Add Posts","Search","Manage Blog"]
+    menu = ["Home","Encuentra tu whisky","Add Posts","Search","Manage Blog"]
     choice = st.sidebar.selectbox("Menu",menu)
+
 
 
     if choice == "Home":
         st.subheader("Lista de todos los whiskys")
-        st.caption("Sitúa el cursor encima de un campo en modo pantalla reducida para visualizar todo su contenido")
-        try:
-            df = pd.read_csv(url)
-            df = df.drop(['currency', 'Unnamed: 0'], axis=1)
-            df[['review.point']].astype(int)
-            df['price'] = pd.to_numeric(df['price'])
-            
-        except Exception as e:
-            print(e)
-            df = pd.read_excel(url)
         st.write(df)
 
         st.subheader("Buscar whisky")
-        search_choice = st.radio("Campo por el que buscar",("nombre","categoria","precio","puntuación"))
+        search_choice = st.radio("Field to Search By",("nombre","categoria","precio","rating"))
+
 
         if search_choice == "nombre":
             nombres = df['name'].unique()
@@ -183,58 +181,44 @@ def main():
 
         elif search_choice == "precio":
             precios = df['price'].unique()
-            precio = st.selectbox('Precio', precios)
-            df[df['price'] == precio]
+            precio_min = st.selectbox('Precio minimo', precios)
+            precio_max = st.selectbox('Precio maximo', precios)
+            if precio_min > precio_max:
+                precio_min = 12.0
+                precio_max = 50.0
+            df_precio = filtradoNumerico('price',precio_min,precio_max,True,df_copy)
+            df_precio
 
-        elif search_choice == "puntuación":
-            st.caption("En caso de que no exista un valor se visualizará la palabra clave empty dentro del dataset")
-            min_puntuacion = int(df['review.point'].min())
-            max_puntuacion = int(df['review.point'].max())
-            puntuacion = st.slider('Puntuación', min_puntuacion, max_puntuacion)
-            df[df['review.point'] == puntuacion]
-
+        elif search_choice == "rating":
+            rg_rev = st.slider('Rating',0,100,(80,99))                 
+            st.write('Values', rg_rev)
+            df_rating = filtradoNumerico('review.point',rg_rev[0],rg_rev[1],True,df_copy)
+            df_rating
+    
         
-        st.subheader("Ver 15 ultimos")
-        entrada = 15
-        print("\n")
-        i = int(entrada)
-        st.write(df_copy.tail(i))
+    elif choice == "Encuentra tu whisky":
+        st.subheader("Encuentra tu whisky ideal")
+
+        st.write("categoria")
+        categorias = df['category'].unique()
+        categoria = st.selectbox('Nombre', categorias)
+
+        st.write("precio")
+        precios = df['price'].unique()
+        precio_min = st.selectbox('Precio minimo', precios)
+        precio_max = st.selectbox('Precio maximo', precios)
+        if precio_min > precio_max:
+            precio_min = 12.0
+            precio_max = 1000000.0
         
-        
+        st.write("rating")
+        rg_rev = st.slider('Rating',0,100,(80,99))                 
 
-    elif choice == "View Posts":
-        
-        df = pd.read_csv(url)
-        df = df.drop(['currency', 'Unnamed: 0'], axis=1)
-        df[['review.point']].astype(int)
-        df['price'] = pd.to_numeric(df['price'])
-            
-        st.subheader("Recomendaciones")
-        search_choice = st.radio("Campo por el que buscar",("nombre","categoria","precio","puntuación"))
-
-        if search_choice == "nombre":
-            nombres = df['name'].unique()
-            nombre = st.selectbox('Nombre', nombres)
-           
-
-        elif search_choice == "categoria":
-            categorias = df['category'].unique()
-            categoria = st.selectbox('Nombre', categorias)
-         
-
-        elif search_choice == "precio":
-            precios = df['price'].unique()
-            precio = st.selectbox('Precio', precios)
-         
-
-        elif search_choice == "puntuación":
-            min_precio = int(df['review.point'].min())
-            max_precio = int(df['review.point'].max())
-
-            precio = st.slider('Puntuación', min_precio, max_precio)
-          
-
-
+        df_muestra = df    
+        df_muestra = df[df['category'] == categoria]
+        df_muestra = filtradoNumerico('price',precio_min,precio_max,True,df_muestra)   
+        df_muestra = filtradoNumerico('review.point',rg_rev[0],rg_rev[1],True,df_muestra)
+        df_muestra
 
     elif choice == "Add Posts":
         st.subheader("Add Articles")
@@ -322,4 +306,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
