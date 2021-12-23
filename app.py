@@ -91,9 +91,19 @@ def get_precio_Whisky(precio,d):
 
 def filtradoNumerico(numericCol, min, max, ascent, d):
 
-  df_precio = d.loc[(d.loc[:,numericCol] >= min) & (d.loc[:, 'price'] <= max)]
+  df_precio = d.loc[(d.loc[:,numericCol] >= min) & (d.loc[:, numericCol] <= max)]
   df_precio = df_precio.sort_values(numericCol, ascending=ascent)
   return df_precio
+
+
+def get_review_Min(df):
+    ratings_min = df['review.point'].min()
+    return ratings_min
+
+def get_review_Max(df):
+    ratings_max = df['review.point'].max()
+    return ratings_max
+
     
 
 def get_blog_by_title(title):
@@ -164,6 +174,8 @@ def main():
     if choice == "Home":
         st.subheader("Lista de todos los whiskys")
         st.write(df)
+        st.caption("Para ordenar el dataset por una columna  -->  hacer click en el título de dicha columna")
+        st.caption("Para visualizar el contenido completo de una celda  -->  en modo pantalla reducida, desplazar el cursor hacia dicha celda")
 
         st.subheader("Buscar whisky")
         search_choice = st.radio("Field to Search By",("nombre","categoria","precio","rating"))
@@ -178,11 +190,12 @@ def main():
             categorias = df['category'].unique()
             categoria = st.selectbox('Nombre', categorias)
             df[df['category'] == categoria]
+            
 
         elif search_choice == "precio":
             precios = df['price'].unique()
-            precio_min = st.selectbox('Precio minimo', precios)
-            precio_max = st.selectbox('Precio maximo', precios)
+            precio_min = st.selectbox('Precio mínimo', precios,435)
+            precio_max = st.selectbox('Precio máximo', precios,60)
             if precio_min > precio_max:
                 precio_min = 12.0
                 precio_max = 50.0
@@ -190,7 +203,7 @@ def main():
             df_precio
 
         elif search_choice == "rating":
-            rg_rev = st.slider('Rating',0,100,(80,99))                 
+            rg_rev = st.slider('Rating',63,100,(80,99))                 
             st.write('Values', rg_rev)
             df_rating = filtradoNumerico('review.point',rg_rev[0],rg_rev[1],True,df_copy)
             df_rating
@@ -199,20 +212,20 @@ def main():
     elif choice == "Encuentra tu whisky":
         st.subheader("Encuentra tu whisky ideal")
 
-        st.write("categoria")
+        st.write("Categoría")
         categorias = df['category'].unique()
-        categoria = st.selectbox('Nombre', categorias)
+        categoria = st.selectbox('Nombre de la categoría', categorias)
 
-        st.write("precio")
+        st.write("Precio")
         precios = df['price'].unique()
-        precio_min = st.selectbox('Precio minimo', precios)
-        precio_max = st.selectbox('Precio maximo', precios)
+        precio_min = st.selectbox('Precio minimo', precios,435)
+        precio_max = st.selectbox('Precio maximo', precios,60)
         if precio_min > precio_max:
             precio_min = 12.0
             precio_max = 1000000.0
         
-        st.write("rating")
-        rg_rev = st.slider('Rating',0,100,(80,99))                 
+        st.write("Rating")
+        rg_rev = st.slider('Rating de los whiskys',63,100,(80,99))                 
 
         df_muestra = df    
         df_muestra = df[df['category'] == categoria]
