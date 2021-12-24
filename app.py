@@ -172,8 +172,6 @@ def main():
         st.write(df)
         st.write("")
         st.write("")
-        st.video("https://www.youtube.com/watch?v=iyWG_uQjGW8&ab_channel=FREEMOVIES")
-
         
     elif choice == "Encuentra tu whisky":
         st.subheader("Encuentra tu whisky ideal")
@@ -201,7 +199,8 @@ def main():
 
     elif choice == "Recomendador de whisky":
         nombres = df['name'].unique()
-        nombre = st.selectbox('Nombre', nombres)
+        st.write("")
+        nombre = st.selectbox('Tu Whisky favorito\n', nombres)
         df[df['name'] == nombre]
 
         index = getIndex(nombre,df)
