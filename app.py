@@ -113,6 +113,21 @@ def rango(index):
   d = d.reset_index(drop=True)
   return d
 
+def recomeda(index):
+  df_to_recomend = procesarDf(df_copy)
+  df_to_recomend = rango(index)
+
+  index2 = getIndex(df_copy.name.iloc[index], df_to_recomend)
+
+  matrixDescription = getMatrix(df_to_recomend)
+
+  distance = list(enumerate(matrixDescription[index2]))
+  ordenados_por_resena = sorted(distance, key=lambda x: x[1])
+  top_index = ordenados_por_resena[1:10]
+  top = [i[0] for i in top_index]
+
+  return df_to_recomend.iloc[top]
+
 
 # Layout Templates
 html_temp = """
@@ -205,19 +220,8 @@ def main():
 
         index = getIndex(nombre,df)
     
-        df_to_recomend = procesarDf(df_copy)
-        df_to_recomend = rango(index)
-
-        index2 = getIndex(df_copy.name.iloc[index], df_to_recomend)
-
-        matrixDescription = getMatrix(df_to_recomend)
-
-        distance = list(enumerate(matrixDescription[index2]))
-        ordenados_por_resena = sorted(distance, key=lambda x: x[1])
-        top_index = ordenados_por_resena[1:10]
-        top = [i[0] for i in top_index]
-
-        df_to_recomend.iloc[top]
+        recomendacion = recomeda(index)
+        recomendacion
 
 
 
