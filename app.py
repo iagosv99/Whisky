@@ -171,16 +171,54 @@ full_message_temp ="""
 """
 
 def main():
-    """A Simple CRUD  Blog"""
     
     st.markdown(html_temp.format('royalblue','white'),unsafe_allow_html=True)
 
-    menu = ["Home","Encuentra tu whisky","Recomendador de whisky"]
+    menu = ["Home","Iniciar Sesión","Registrarse","Encuentra tu whisky","Recomendador de whisky"]
     choice = st.sidebar.selectbox("Menu",menu)
 
+    if choice == "Iniciar Sesión":
+        st.subheader("Recomendador de whiskys")
+
+        username = st.sidebar.text_input("Usuario")
+        password = st.sidebar.text_input("Contraseña",type='password')
+        if st.sidebar.button("Iniciar Sesión"):
+
+            create_usertable()
+            hashed_pswd = make_hashes(password)
+
+            result = login_user(username,check_hashes(password,hashed_pswd))
+            if result:
+
+                st.success("Hola {}".format(username))  
+
+                if choice:
+                    nombres = df['name'].unique()
+                    st.write("")
+                    nombre = st.selectbox('Introduce tu Whisky favorito\n', nombres)
+                    df[df['name'] == nombre]
+
+                    index = getIndex(nombre,df)
+                
+                    recomendacion = recomeda(index)
+                    st.caption("Tus 10 recomendaciones personalizadas:")
+                    st.dataframe(recomendacion[['name','description']])
+            else:
+                st.warning("Incorrect Username/Password")
+
+    elif choice == "Registrarse":
+        st.subheader("Crear nueva cuenta")
+        new_user = st.text_input("Usuario")
+        new_password = st.text_input("Contraseña",type='password')
+
+        if st.button("Registro"):
+            create_usertable()
+            add_userdata(new_user,make_hashes(new_password))
+            st.success("Has creado exitosamente tu cuenta")
+            st.info("Ir al menú de Inicio de Sesión para correctamente iniciar sesión")
 
 
-    if choice == "Home":
+    elif choice == "Home":
         st.write("")
         st.subheader("Lista de todos los whiskys")
         st.write("")
@@ -221,7 +259,40 @@ def main():
         index = getIndex(nombre,df)
     
         recomendacion = recomeda(index)
-        recomendacion
+        st.dataframe(recomendacion[['name','description']])
+
+
+import hashlib
+def make_hashes(password):
+    return hashlib.sha256(str.encode(password)).hexdigest()
+
+def check_hashes(password,hashed_text):
+    if make_hashes(password) == hashed_text:
+        return hashed_text
+    return False
+
+# DB  Functions
+def create_usertable():
+    c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT)')
+
+
+def add_userdata(username,password):
+    c.execute('INSERT INTO userstable(username,password) VALUES (?,?)',(username,password))
+    conn.commit()
+
+def login_user(username,password):
+    c.execute('SELECT * FROM userstable WHERE username =? AND password = ?',(username,password))
+    data = c.fetchall()
+    return data
+
+
+def view_all_users():
+    c.execute('SELECT * FROM userstable')
+    data = c.fetchall()
+    return data
+
+
+
 
 
 
