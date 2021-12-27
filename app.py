@@ -128,6 +128,8 @@ def recomeda(index):
 
   return df_to_recomend.iloc[top]
 
+def addWhisky(new_row, dfadd):                                                         #la nueva fila viene en forma de array y se trata dentro de la funcion 
+  return dfadd.append(new_row, ignore_index=True)                   
 
 # Layout Templates
 html_temp = """
@@ -266,7 +268,8 @@ def main():
                         add_whisky(selected_df['name'])
                     
                 elif choiceUser == "Mis whiskys":  
-                    viewWhiskys()      
+                    mis_whiskys = viewWhiskys() 
+                    st.dataframe(mis_whiskys)     
 
             else:
                 st.warning("Incorrect Username/Password")
@@ -365,16 +368,16 @@ def view_all_users():
 
 def viewWhiskys():
     cont = 0
+    toret = pd.DataFrame()
     c.execute('SELECT whiskys FROM userstable')
     data= c.fetchall()
-    st.write(data)
     for i in data:
-        cont = cont+1
-        st.write(i[0])
         if cont > 0:
-            index = getIndex((data[i[0]]), df)
-            st.write(index)
-
+            index = getIndex(i[0], df)
+            new_row = df.iloc[index]
+            toret = addWhisky(new_row,toret)
+        cont = cont+1   
+    return toret
 
 
 if __name__ == '__main__':
