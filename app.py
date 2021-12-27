@@ -94,7 +94,6 @@ def filtradoNumerico(numericCol, min, max, ascent, d):
   return df_precio
     
 def getIndex(value,d):
-  print(value)
   i = d.loc[:, 'name'] == value
   df_tmp = d.loc[i]
   i2 = df_tmp.index.tolist()
@@ -172,6 +171,7 @@ full_message_temp ="""
 """
 
 def main():
+
     
     st.markdown(html_temp.format('royalblue','white'),unsafe_allow_html=True)
 
@@ -179,8 +179,7 @@ def main():
     choice = st.sidebar.selectbox("Menu",menu)
 
     if choice == "Iniciar Sesión":
-        st.subheader("Recomendador de whiskys")
-
+        
         username = st.sidebar.text_input("Usuario")
         password = st.sidebar.text_input("Contraseña",type='password')
 
@@ -191,10 +190,12 @@ def main():
 
             result = login_user(username,check_hashes(password,hashed_pswd))
             if result:
-
+                
                 st.success("Hola {}".format(username))  
 
-                if choice:
+                menuUser = ["Recomendador de whiskys", "Mis whiskys"]
+                choiceUser= st.sidebar.selectbox("Opciones de usuario registrado", menuUser)
+                if choiceUser == "Recomendador de whiskys":
                     nombres = df['name'].unique()
                     st.write("")
                     nombre = st.selectbox('Introduce tu Whisky favorito\n', nombres)
@@ -203,56 +204,23 @@ def main():
                     index = getIndex(nombre,df)
                 
                     recomendacion = recomeda(index)
-                    recomendacionP=recomendacion[['name']]
+                    recomendacionP=recomendacion[['name','description']]
                 
                     st.caption("Tus 10 recomendaciones personalizadas:")
 
                     
                     #Example controlers
-                    sample_size = st.sidebar.number_input("rows", min_value=10, value=10)
                     
 
-                    return_mode = st.sidebar.selectbox("Return Mode", list(DataReturnMode.__members__), index=1)
-                    return_mode_value = DataReturnMode.__members__[return_mode]
+                    
+                    return_mode_value = DataReturnMode.FILTERED
 
-                    update_mode = st.sidebar.selectbox("Update Mode", list(GridUpdateMode.__members__), index=6)
-                    update_mode_value = GridUpdateMode.__members__[update_mode]
+                    update_mode_value = GridUpdateMode.MODEL_CHANGED
 
-                    #enterprise modules
-                    enable_enterprise_modules = st.sidebar.checkbox("Enable Enterprise Modules")
-                    if enable_enterprise_modules:
-                        enable_sidebar =st.sidebar.checkbox("Enable grid sidebar", value=False)
-                    else:
-                        enable_sidebar = False
+                    
 
                     #features
-                    fit_columns_on_grid_load = st.sidebar.checkbox("Fit Grid Columns on Load")
-
-                    enable_selection=st.sidebar.checkbox("Enable row selection", value=True)
-                    if enable_selection:
-                        st.sidebar.subheader("Selection options")
-                        selection_mode = st.sidebar.radio("Selection Mode", ['single','multiple'])
-                        
-                        use_checkbox = st.sidebar.checkbox("Use check box for selection")
-                        if use_checkbox:
-                            groupSelectsChildren = st.sidebar.checkbox("Group checkbox select children", value=True)
-                            groupSelectsFiltered = st.sidebar.checkbox("Group checkbox includes filtered", value=True)
-
-                        if ((selection_mode == 'multiple') & (not use_checkbox)):
-                            rowMultiSelectWithClick = st.sidebar.checkbox("Multiselect with click (instead of holding CTRL)", value=False)
-                            if not rowMultiSelectWithClick:
-                                suppressRowDeselection = st.sidebar.checkbox("Suppress deselection (while holding CTRL)", value=False)
-                            else:
-                                suppressRowDeselection=False
-                        st.sidebar.text("___")
-
-                    enable_pagination = st.sidebar.checkbox("Enable pagination", value=False)
-                    if enable_pagination:
-                        st.sidebar.subheader("Pagination options")
-                        paginationAutoSize = st.sidebar.checkbox("Auto pagination size", value=True)
-                        if not paginationAutoSize:
-                            paginationPageSize = st.sidebar.number_input("Page size", value=5, min_value=0, max_value=sample_size)
-                        st.sidebar.text("___")
+                    fit_columns_on_grid_load = True               
 
                     #Infer basic colDefs from dataframe types
                     gb = GridOptionsBuilder.from_dataframe(recomendacionP)
@@ -260,23 +228,9 @@ def main():
                     #customize gridOptions
                     gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
 
-
-                    if enable_sidebar:
-                        gb.configure_side_bar()
-
-                    if enable_selection:
-                        gb.configure_selection(selection_mode)
-                        if use_checkbox:
-                            gb.configure_selection(selection_mode, use_checkbox=True, groupSelectsChildren=groupSelectsChildren, groupSelectsFiltered=groupSelectsFiltered)
-                        if ((selection_mode == 'multiple') & (not use_checkbox)):
-                            gb.configure_selection(selection_mode, use_checkbox=False, rowMultiSelectWithClick=rowMultiSelectWithClick, suppressRowDeselection=suppressRowDeselection)
-
-                    if enable_pagination:
-                        if paginationAutoSize:
-                            gb.configure_pagination(paginationAutoPageSize=True)
-                        else:
-                            gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=paginationPageSize)
-
+                    gb.configure_selection('single')
+                        
+                    
                     gb.configure_grid_options(domLayout='normal')
                     gridOptions = gb.build()
 
@@ -289,7 +243,7 @@ def main():
                         update_mode=update_mode_value,
                         fit_columns_on_grid_load=fit_columns_on_grid_load,
                         allow_unsafe_jscode=True, #Set it to True to allow jsfunction to be injected
-                        enable_enterprise_modules=enable_enterprise_modules,
+                       
                         )
 
                     recomendacionP = grid_response['data']
@@ -308,8 +262,14 @@ def main():
                         st.subheader("Whisky seleccionado:")
                         st.write(grid_response['selected_rows'])
 
-                else:
-                    st.warning("Incorrect Username/Password")
+                    if st.button("Confirmar seleccion"):
+                        add_whisky(selected_df['name'])
+                    
+                elif choiceUser == "Mis whiskys":  
+                    viewWhiskys()      
+
+            else:
+                st.warning("Incorrect Username/Password")
 
     elif choice == "Registrarse":
         st.subheader("Crear nueva cuenta")
@@ -379,7 +339,10 @@ def check_hashes(password,hashed_text):
 
 # DB  Functions
 def create_usertable():
-    c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT, whiskys TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT,whiskys TEXT UNIQUE)')
+
+def dropusers():
+    c.execute('DROP TABLE userstable')
 
 
 def add_userdata(username,password):
@@ -387,7 +350,7 @@ def add_userdata(username,password):
     conn.commit()
 
 def add_whisky(whisky):
-    c.execute('INSERT INTO userstable(whiskys) VALUE (?)',(whisky))
+    c.execute('INSERT INTO userstable(whiskys) VALUES (?)',(whisky))
     conn.commit()
 
 def login_user(username,password):
@@ -395,14 +358,22 @@ def login_user(username,password):
     data = c.fetchall()
     return data
 
-
 def view_all_users():
     c.execute('SELECT * FROM userstable')
     data = c.fetchall()
     return data
 
-
-
+def viewWhiskys():
+    cont = 0
+    c.execute('SELECT whiskys FROM userstable')
+    data= c.fetchall()
+    st.write(data)
+    for i in data:
+        cont = cont+1
+        st.write(i[0])
+        if cont > 0:
+            index = getIndex((data[i[0]]), df)
+            st.write(index)
 
 
 
