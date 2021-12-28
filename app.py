@@ -177,10 +177,9 @@ full_message_temp ="""
 <p style="text-align:justify;color:black;padding:10px">{}</p>
 </div>
 """
-#prueba
+
 def main():
 
-    st.write("sss")
     st.markdown(html_temp.format('royalblue','white'),unsafe_allow_html=True)
 
     menu = ["Home","Iniciar Sesión","Registrarse","Encuentra tu whisky","Recomendador de whisky"]
