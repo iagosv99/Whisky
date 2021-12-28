@@ -26,12 +26,6 @@ df[['review.point']].astype(int)
 df['price'] = pd.to_numeric(df['price'])
 df_copy  = df.copy(True) 
 
-
-#Preparar los datagrid
-return_mode_value = DataReturnMode.FILTERED
-update_mode_value = GridUpdateMode.MODEL_CHANGED
-fit_columns_on_grid_load = True               
-
 ################################################################
 def procesarDf(df_proc):
   ps = PorterStemmer()
@@ -215,9 +209,29 @@ def main():
                 
                     st.caption("Tus 10 recomendaciones personalizadas:")
 
+                    
+                    #Example controlers
+                    
+
+                    
+                    return_mode_value = DataReturnMode.FILTERED
+
+                    update_mode_value = GridUpdateMode.MODEL_CHANGED
+
+                    
+
+                    #features
+                    fit_columns_on_grid_load = True               
+
+                    #Infer basic colDefs from dataframe types
                     gb = GridOptionsBuilder.from_dataframe(recomendacionP)
+
+                    #customize gridOptions
                     gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
-                    gb.configure_selection('single')                    
+
+                    gb.configure_selection('single')
+                        
+                    
                     gb.configure_grid_options(domLayout='normal')
                     gridOptions = gb.build()
 
@@ -229,7 +243,8 @@ def main():
                         data_return_mode=return_mode_value, 
                         update_mode=update_mode_value,
                         fit_columns_on_grid_load=fit_columns_on_grid_load,
-                        allow_unsafe_jscode=True, 
+                        allow_unsafe_jscode=True, #Set it to True to allow jsfunction to be injected
+                       
                         )
 
                     recomendacionP = grid_response['data']
@@ -237,6 +252,7 @@ def main():
                     selected_df = pd.DataFrame(selected)
 
                     with st.spinner("Displaying results..."):
+                        #displays the chart
                         chart_data = recomendacionP.loc[:,['name']].assign(source='total')
 
                         if not selected_df.empty:
@@ -247,37 +263,13 @@ def main():
                         st.subheader("Whisky seleccionado:")
                         st.write(grid_response['selected_rows'])
 
-                    if st.button("Guardar Whisky"):
+                    if st.button("Confirmar seleccion"):
                         add_whisky(selected_df['name'])
-
                     
                 elif choiceUser == "Mis whiskys":  
                     mis_whiskys = viewWhiskys() 
+                    st.dataframe(mis_whiskys)     
 
-                    gb = GridOptionsBuilder.from_dataframe(mis_whiskys)
-                    gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
-                    gb.configure_selection('single')                    
-                    gb.configure_grid_options(domLayout='normal')
-                    gridOptions = gb.build()
-
-                    grid_response = AgGrid(
-                    mis_whiskys, 
-                    gridOptions=gridOptions,
-                    height=300, 
-                    width='100%',
-                    data_return_mode=return_mode_value, 
-                    update_mode=update_mode_value,
-                    fit_columns_on_grid_load=fit_columns_on_grid_load,
-                    )
-
-                    left, right = st.columns(2)
-                    with left:
-                        st.button("👍")
-                    with right:
-                        st.button("👎")
-
-                    if st.text_input("comm"):
-                        st.write("comment")
             else:
                 st.warning("Incorrect Username/Password")
 
